@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -38,6 +39,8 @@ public class MainActivity extends AppCompatActivity {
 
     ArrayList<String> titles = new ArrayList<>();
     ArrayAdapter arrayAdapter;
+
+    ArrayList<String> urls = new ArrayList<>();
 
     public class DownloadTask extends AsyncTask<String, Void, String> {
         @Override
@@ -86,6 +89,13 @@ public class MainActivity extends AppCompatActivity {
         ListView listView = (ListView) findViewById(R.id.listView);
         arrayAdapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, titles);
         listView.setAdapter(arrayAdapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Log.i("articleURL", urls.get(position));
+            }
+        });
+
 
         articleDB = this.openOrCreateDatabase("Articles", MODE_PRIVATE, null);
         articleDB.execSQL("CREATE TABLE IF NOT EXISTS articles (" +
@@ -141,16 +151,18 @@ public class MainActivity extends AppCompatActivity {
 
                 int counter = 1;
                 titles.clear();
+                urls.clear();
 //                while (c != null) {
                 while (!c.isLast()) {
                     String articleTitle = c.getString(titleIndex);
-
-                    Log.i("counter", String.valueOf(counter++));
-                    Log.i("articleId", Integer.toString(c.getInt(articleIdIndex)));
-                    Log.i("articleURL", c.getString(urlIndex));
-                    Log.i("articleTitle", articleTitle);
+//
+//                    Log.i("counter", String.valueOf(counter++));
+//                    Log.i("articleId", Integer.toString(c.getInt(articleIdIndex)));
+//                    Log.i("articleURL", c.getString(urlIndex));
+//                    Log.i("articleTitle", articleTitle);
 
                     titles.add(articleTitle);
+                    urls.add(c.getString(urlIndex));
 
                     c.moveToNext();
                 }
