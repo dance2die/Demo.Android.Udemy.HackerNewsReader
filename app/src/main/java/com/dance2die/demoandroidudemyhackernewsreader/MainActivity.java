@@ -1,5 +1,8 @@
 package com.dance2die.demoandroidudemyhackernewsreader;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -28,6 +31,9 @@ public class MainActivity extends AppCompatActivity {
     Map<Integer, String> articleURLs = new HashMap<>();
     Map<Integer, String> articleTitles = new HashMap<>();
     ArrayList<Integer> articleIds = new ArrayList<>();
+
+    SQLiteDatabase articleDB;
+
 
     public class DownloadTask extends AsyncTask<String, Void, String> {
         @Override
@@ -73,6 +79,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        articleDB = this.openOrCreateDatabase("Articles", MODE_PRIVATE, null);
+        articleDB.execSQL("CREATE TABLE IF NOT EXISTS articles (" +
+                "id INTEGER PRIMARY KEY," +
+                "articleId INTEGER, " +
+                "url VARCHAR, " +
+                "title VARCHAR, " +
+                "content VARCHAR)");
+
 
         DownloadTask task = new DownloadTask();
         try {
@@ -80,13 +94,12 @@ public class MainActivity extends AppCompatActivity {
             Log.i("Result", result);
 
             JSONArray jsonArray = new JSONArray(result);
+            articleDB.execSQL("DELETE FROM articles");
+
             // top 20 results are OK.
-            for (int i = 0; i < 20; i++){
+            for (int i = 0; i <= 20; i++){
                 String articleId = jsonArray.getString(i);
                 String url = String.format("https://hacker-news.firebaseio.com/v0/item/%s.json?print=pretty", articleId);
-
-//                Log.i("ArticleId", articleId);
-//                Log.i("URL", url);
 
                 DownloadTask getArticleTask = new DownloadTask();
                 String articleInfo = getArticleTask.execute(url).get();
@@ -94,19 +107,47 @@ public class MainActivity extends AppCompatActivity {
 
                 String articleTitle = jsonObject.getString("title");
                 String articleURL = jsonObject.getString("url");
-//                Log.i("articleTitle#" + (i + 1), articleTitle);
-//                Log.i("articleURL", articleURL);
 
                 articleIds.add(Integer.valueOf(articleId));
                 articleTitles.put(Integer.valueOf(articleId), articleTitle);
                 articleURLs.put(Integer.valueOf(articleId), articleURL);
+
+                String sql = "INSERT INTO articles(articleId, url, title) VALUES (?, ?, ?)";
+                SQLiteStatement statement = articleDB.compileStatement(sql);
+                statement.bindString(1, articleId);
+                statement.bindString(2, articleURL);
+                statement.bindString(3, articleTitle);
+                statement.execute();
             }
 
-            Log.i("articleIds", articleIds.toString());
-            Log.i("articleTitles", articleTitles.toString());
-            Log.i("articleURLs", articleURLs.toString());
+            Cursor c = articleDB.rawQuery("SELECT * FROM articles", null);
+            try {
+//            articleDB.rawQuery("DELETE FROM articles", null);
+//            return;
+
+                int articleIdIndex = c.getColumnIndex("articleId");
+                int urlIndex = c.getColumnIndex("url");
+                int titleIndex = c.getColumnIndex("title");
+
+                c.moveToFirst();
+
+                int counter = 1;
+//                while (c != null) {
+                while (!c.isLast()) {
+                    Log.i("counter", String.valueOf(counter++));
+                    Log.i("articleId", Integer.toString(c.getInt(articleIdIndex)));
+                    Log.i("articleURL", c.getString(urlIndex));
+                    Log.i("articleTitle", c.getString(titleIndex));
+
+                    c.moveToNext();
+                }
+            } finally {
+                c.close();
+            }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            articleDB.close();
         }
     }
 
