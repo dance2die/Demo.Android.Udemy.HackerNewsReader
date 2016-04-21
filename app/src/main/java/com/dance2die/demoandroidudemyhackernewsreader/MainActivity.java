@@ -12,6 +12,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -73,8 +74,24 @@ public class MainActivity extends AppCompatActivity {
             Log.i("Result", result);
 
             JSONArray jsonArray = new JSONArray(result);
-            for (int i = 0; i < jsonArray.length(); i++){
-                Log.i("ArticleID", jsonArray.getString(i));
+            // top 20 results are OK.
+            for (int i = 0; i < 20; i++){
+                String articleId = jsonArray.getString(i);
+                String url = String.format("https://hacker-news.firebaseio.com/v0/item/%s.json?print=pretty", articleId);
+
+//                Log.i("ArticleId", articleId);
+//                Log.i("URL", url);
+
+                DownloadTask getArticleTask = new DownloadTask();
+                String articleInfo = getArticleTask.execute(url).get();
+                JSONObject jsonObject = new JSONObject(articleInfo);
+
+                String articleTitle = jsonObject.getString("title");
+                Log.i("articleTitle#" + (i + 1), articleTitle);
+
+                String articleURL = jsonObject.getString("url");
+                Log.i("articleURL", articleURL);
+
             }
         } catch (Exception e) {
             e.printStackTrace();
