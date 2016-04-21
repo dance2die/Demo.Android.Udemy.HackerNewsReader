@@ -18,12 +18,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity {
 
-    public class DownloadTask extends AsyncTask<String, Void, String> {
+    Map<Integer, String> articleURLs = new HashMap<>();
+    Map<Integer, String> articleTitles = new HashMap<>();
+    ArrayList<Integer> articleIds = new ArrayList<>();
 
+    public class DownloadTask extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls) {
             String result = "";
@@ -87,12 +93,18 @@ public class MainActivity extends AppCompatActivity {
                 JSONObject jsonObject = new JSONObject(articleInfo);
 
                 String articleTitle = jsonObject.getString("title");
-                Log.i("articleTitle#" + (i + 1), articleTitle);
-
                 String articleURL = jsonObject.getString("url");
-                Log.i("articleURL", articleURL);
+//                Log.i("articleTitle#" + (i + 1), articleTitle);
+//                Log.i("articleURL", articleURL);
 
+                articleIds.add(Integer.valueOf(articleId));
+                articleTitles.put(Integer.valueOf(articleId), articleTitle);
+                articleURLs.put(Integer.valueOf(articleId), articleURL);
             }
+
+            Log.i("articleIds", articleIds.toString());
+            Log.i("articleTitles", articleTitles.toString());
+            Log.i("articleURLs", articleURLs.toString());
         } catch (Exception e) {
             e.printStackTrace();
         }
