@@ -11,6 +11,8 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import org.json.JSONArray;
+
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -69,9 +71,12 @@ public class MainActivity extends AppCompatActivity {
         try {
             String result = task.execute("https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty").get();
             Log.i("Result", result);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+
+            JSONArray jsonArray = new JSONArray(result);
+            for (int i = 0; i < jsonArray.length(); i++){
+                Log.i("ArticleID", jsonArray.getString(i));
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
