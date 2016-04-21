@@ -13,6 +13,8 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -34,6 +36,8 @@ public class MainActivity extends AppCompatActivity {
 
     SQLiteDatabase articleDB;
 
+    ArrayList<String> titles = new ArrayList<>();
+    ArrayAdapter arrayAdapter;
 
     public class DownloadTask extends AsyncTask<String, Void, String> {
         @Override
@@ -79,6 +83,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        ListView listView = (ListView) findViewById(R.id.listView);
+        arrayAdapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, titles);
+        listView.setAdapter(arrayAdapter);
+
         articleDB = this.openOrCreateDatabase("Articles", MODE_PRIVATE, null);
         articleDB.execSQL("CREATE TABLE IF NOT EXISTS articles (" +
                 "id INTEGER PRIMARY KEY," +
@@ -120,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
                 statement.execute();
             }
 
-            Cursor c = articleDB.rawQuery("SELECT * FROM articles", null);
+            Cursor c = articleDB.rawQuery("SELECT * FROM articles ORDER BY articleId DESC", null);
             try {
 //            articleDB.rawQuery("DELETE FROM articles", null);
 //            return;
@@ -132,15 +140,22 @@ public class MainActivity extends AppCompatActivity {
                 c.moveToFirst();
 
                 int counter = 1;
+                titles.clear();
 //                while (c != null) {
                 while (!c.isLast()) {
+                    String articleTitle = c.getString(titleIndex);
+
                     Log.i("counter", String.valueOf(counter++));
                     Log.i("articleId", Integer.toString(c.getInt(articleIdIndex)));
                     Log.i("articleURL", c.getString(urlIndex));
-                    Log.i("articleTitle", c.getString(titleIndex));
+                    Log.i("articleTitle", articleTitle);
+
+                    titles.add(articleTitle);
 
                     c.moveToNext();
                 }
+
+                arrayAdapter.notifyDataSetChanged();
             } finally {
                 c.close();
             }
