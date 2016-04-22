@@ -36,7 +36,9 @@ public class ArticleActivity extends AppCompatActivity {
 
         Intent i = getIntent();
         String url = i.getStringExtra("articleURL");
-        webView.loadUrl(url);
+        String content = i.getStringExtra("content");
+//        webView.loadUrl(url);
+        webView.loadData(content, "text/html", "UTF-8");
     }
 
 }

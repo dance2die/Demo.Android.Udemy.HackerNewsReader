@@ -42,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     ArrayAdapter arrayAdapter;
 
     ArrayList<String> urls = new ArrayList<>();
+    ArrayList<String> contents = new ArrayList<>();
 
     public class DownloadTask extends AsyncTask<String, Void, String> {
         @Override
@@ -88,15 +89,34 @@ public class MainActivity extends AppCompatActivity {
                     String articleTitle = jsonObject.getString("title");
                     String articleURL = jsonObject.getString("url");
 
+                    url = new URL(articleURL);
+                    urlConnection = (HttpURLConnection) url.openConnection();
+                    in = urlConnection.getInputStream();
+                    reader = new InputStreamReader(in);
+                    data = reader.read();
+                    String articleContent = "";
+                    while (data != -1){
+                        char current = (char) data;
+                        articleContent += current;
+                        data = reader.read();
+                    }
+
+
+
+
+
+
+
                     articleIds.add(Integer.valueOf(articleId));
                     articleTitles.put(Integer.valueOf(articleId), articleTitle);
                     articleURLs.put(Integer.valueOf(articleId), articleURL);
 
-                    String sql = "INSERT INTO articles(articleId, url, title) VALUES (?, ?, ?)";
+                    String sql = "INSERT INTO articles(articleId, url, title, content) VALUES (?, ?, ?, ?)";
                     SQLiteStatement statement = articleDB.compileStatement(sql);
                     statement.bindString(1, articleId);
                     statement.bindString(2, articleURL);
                     statement.bindString(3, articleTitle);
+                    statement.bindString(4, articleContent);
                     statement.execute();
                 }
             } catch (Exception e) {
@@ -138,6 +158,7 @@ public class MainActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent i = new Intent(getApplicationContext(), ArticleActivity.class);
                 i.putExtra("articleURL", urls.get(position));
+                i.putExtra("content", contents.get(position));
                 startActivity(i);
 
                 Log.i("articleURL", urls.get(position));
@@ -170,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             Log.i("UI UPDATED", "DONE");
 
-//            int articleIdIndex = c.getColumnIndex("articleId");
+            int contentIndex = c.getColumnIndex("content");
             int urlIndex = c.getColumnIndex("url");
             int titleIndex = c.getColumnIndex("title");
 
@@ -182,6 +203,7 @@ public class MainActivity extends AppCompatActivity {
                 String articleTitle = c.getString(titleIndex);
                 titles.add(articleTitle);
                 urls.add(c.getString(urlIndex));
+                contents.add(c.getString(contentIndex));
 
                 c.moveToNext();
             }
