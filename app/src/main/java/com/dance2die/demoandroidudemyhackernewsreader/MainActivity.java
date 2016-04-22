@@ -63,11 +63,54 @@ public class MainActivity extends AppCompatActivity {
 
                     data = reader.read();
                 }
+
+
+                JSONArray jsonArray = new JSONArray(result);
+                articleDB.execSQL("DELETE FROM articles");
+
+                // top 20 results are OK.
+                for (int i = 0; i <= 20; i++){
+                    String articleId = jsonArray.getString(i);
+                    url = new URL(String.format("https://hacker-news.firebaseio.com/v0/item/%s.json?print=pretty", articleId));
+                    urlConnection = (HttpURLConnection) url.openConnection();
+                    in = urlConnection.getInputStream();
+                    reader = new InputStreamReader(in);
+                    data = reader.read();
+                    String articleInfo = "";
+                    while (data != -1){
+                        char current = (char) data;
+                        articleInfo += current;
+                        data = reader.read();
+                    }
+
+                    JSONObject jsonObject = new JSONObject(articleInfo);
+
+                    String articleTitle = jsonObject.getString("title");
+                    String articleURL = jsonObject.getString("url");
+
+                    articleIds.add(Integer.valueOf(articleId));
+                    articleTitles.put(Integer.valueOf(articleId), articleTitle);
+                    articleURLs.put(Integer.valueOf(articleId), articleURL);
+
+                    String sql = "INSERT INTO articles(articleId, url, title) VALUES (?, ?, ?)";
+                    SQLiteStatement statement = articleDB.compileStatement(sql);
+                    statement.bindString(1, articleId);
+                    statement.bindString(2, articleURL);
+                    statement.bindString(3, articleTitle);
+                    statement.execute();
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
             return result;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+
+            updateListView();
         }
     }
 
@@ -110,65 +153,44 @@ public class MainActivity extends AppCompatActivity {
                 "title VARCHAR, " +
                 "content VARCHAR)");
 
+        updateListView();
 
         DownloadTask task = new DownloadTask();
         try {
-            String result = task.execute("https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty").get();
-            Log.i("Result", result);
-
-            JSONArray jsonArray = new JSONArray(result);
-            articleDB.execSQL("DELETE FROM articles");
-
-            // top 20 results are OK.
-            for (int i = 0; i <= 20; i++){
-                String articleId = jsonArray.getString(i);
-                String url = String.format("https://hacker-news.firebaseio.com/v0/item/%s.json?print=pretty", articleId);
-
-                DownloadTask getArticleTask = new DownloadTask();
-                String articleInfo = getArticleTask.execute(url).get();
-                JSONObject jsonObject = new JSONObject(articleInfo);
-
-                String articleTitle = jsonObject.getString("title");
-                String articleURL = jsonObject.getString("url");
-
-                articleIds.add(Integer.valueOf(articleId));
-                articleTitles.put(Integer.valueOf(articleId), articleTitle);
-                articleURLs.put(Integer.valueOf(articleId), articleURL);
-
-                String sql = "INSERT INTO articles(articleId, url, title) VALUES (?, ?, ?)";
-                SQLiteStatement statement = articleDB.compileStatement(sql);
-                statement.bindString(1, articleId);
-                statement.bindString(2, articleURL);
-                statement.bindString(3, articleTitle);
-                statement.execute();
-            }
-
-            Cursor c = articleDB.rawQuery("SELECT * FROM articles ORDER BY articleId DESC", null);
-            try {
-                int articleIdIndex = c.getColumnIndex("articleId");
-                int urlIndex = c.getColumnIndex("url");
-                int titleIndex = c.getColumnIndex("title");
-
-                titles.clear();
-                urls.clear();
-
-                c.moveToFirst();
-                while (!c.isLast()) {
-                    String articleTitle = c.getString(titleIndex);
-                    titles.add(articleTitle);
-                    urls.add(c.getString(urlIndex));
-
-                    c.moveToNext();
-                }
-
-                arrayAdapter.notifyDataSetChanged();
-            } finally {
-                c.close();
-            }
+            task.execute("https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty");
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            articleDB.close();
+//            articleDB.close();
+        }
+    }
+
+    private void updateListView() {
+        Cursor c = articleDB.rawQuery("SELECT * FROM articles ORDER BY articleId DESC", null);
+        try {
+            Log.i("UI UPDATED", "DONE");
+
+//            int articleIdIndex = c.getColumnIndex("articleId");
+            int urlIndex = c.getColumnIndex("url");
+            int titleIndex = c.getColumnIndex("title");
+
+            titles.clear();
+            urls.clear();
+
+            c.moveToFirst();
+            while (!c.isLast()) {
+                String articleTitle = c.getString(titleIndex);
+                titles.add(articleTitle);
+                urls.add(c.getString(urlIndex));
+
+                c.moveToNext();
+            }
+
+            arrayAdapter.notifyDataSetChanged();
+        } catch(Exception e){
+            e.printStackTrace();
+        } finally {
+            c.close();
         }
     }
 
