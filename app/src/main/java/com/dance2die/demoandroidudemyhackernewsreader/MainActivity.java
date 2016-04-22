@@ -145,27 +145,16 @@ public class MainActivity extends AppCompatActivity {
 
             Cursor c = articleDB.rawQuery("SELECT * FROM articles ORDER BY articleId DESC", null);
             try {
-//            articleDB.rawQuery("DELETE FROM articles", null);
-//            return;
-
                 int articleIdIndex = c.getColumnIndex("articleId");
                 int urlIndex = c.getColumnIndex("url");
                 int titleIndex = c.getColumnIndex("title");
 
-                c.moveToFirst();
-
-                int counter = 1;
                 titles.clear();
                 urls.clear();
-//                while (c != null) {
+
+                c.moveToFirst();
                 while (!c.isLast()) {
                     String articleTitle = c.getString(titleIndex);
-//
-//                    Log.i("counter", String.valueOf(counter++));
-//                    Log.i("articleId", Integer.toString(c.getInt(articleIdIndex)));
-//                    Log.i("articleURL", c.getString(urlIndex));
-//                    Log.i("articleTitle", articleTitle);
-
                     titles.add(articleTitle);
                     urls.add(c.getString(urlIndex));
 
